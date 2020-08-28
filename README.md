@@ -4,6 +4,7 @@ Very simple program to bulk download videos from microsoft stream channel.
 
 Requirements:
 .NET core runtime, https://dotnet.microsoft.com/download
+A built destreamer
 
 Preparation:
 1) Open up the channel you'd like to download videos from
