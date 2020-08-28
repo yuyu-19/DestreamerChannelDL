@@ -6,15 +6,13 @@ Module Program
     Sub Main(args As String())
         Dim args2 As List(Of String) = args.ToList
         Dim threads As Integer = 1
-
+        Dim di As DirectoryInfo
         If File.Exists(ParentDir & "\isdev.txt") Then    'Autopopulates it for my specific setup because I'm lazy AF lmao
-            Dim di As New DirectoryInfo(ParentDir)
+            di = New DirectoryInfo(ParentDir)
             For Each f As FileInfo In di.GetFiles
                 If f.Name.Contains("data-") Then
                     args2.Insert(0, f.FullName)
                     args2.Insert(1, """" & Environment.GetFolderPath(Environment.SpecialFolder.Desktop) & "\Programs\Destreamer\destreamer\destreamer.cmd""")
-                    Console.WriteLine(args2(1))
-                    Console.ReadLine()
                     args2.Insert(2, """I:\Lezioni\" & f.Name.Replace("data-", "").Replace(".txt", "") & """")
                 End If
             Next
@@ -23,7 +21,7 @@ Module Program
 
         If args2.Count < 3 Then
             Console.WriteLine("Usage: streamchannelDL.exe ""path-to-file"" ""path-to-destreamer.cmd"" ""output-dir"" [--threads X]" & vbCrLf)
-            Console.WriteLine("The stream site is weird and I'm too dumb to figure out how to load the entire" & vbCrLf & "list of videos, so you'll have to do it yourself. Just scroll to the bottom, do inspect, copy the body and save it to a file.")
+            Console.WriteLine("The stream site is complicated and I'm too dumb to figure out how to load the entire" & vbCrLf & "list of videos, so you'll have to do it yourself. Just scroll to the bottom, do inspect, copy the body and save it to a file.")
             Console.WriteLine("You can also optionally add --threads X to parallelize it")
             Return
         End If
@@ -45,9 +43,10 @@ Module Program
              so you'll have to do it yourself. Just scroll to the bottom, do inspect, copy the body and save it to a file.")
         End If
 
-        For Each s In args2
-            s.Replace("""", "")
+        For i = 0 To args2.Count - 1
+            args2(i) = args2(i).Replace("""", "")
         Next
+
 
         Dim text As String = ""
 
@@ -79,21 +78,21 @@ Module Program
             i = text.IndexOf(" href=""/video/", i)
         Loop
 
-
-        If File.Exists(ParentDir & "\urls0.txt") Then
-            For i = 0 To threads
-                If File.Exists(ParentDir & "\urls" & i & ".txt") Then
-                    File.Delete(ParentDir & "\urls" & i & ".txt")
-                End If
-            Next
+        If Not (Directory.Exists(ParentDir & "\DirURLs")) Then
+            Directory.CreateDirectory(ParentDir & "\DirURLs")
         End If
 
+        di = New DirectoryInfo(ParentDir & "\DirURLs")
+        For Each f As FileInfo In di.GetFiles
+            f.Delete()
+        Next
+
         For Each s As String In URLs
-            File.AppendAllText(ParentDir & "\urls" & (URLs.IndexOf(s) Mod threads + 1) & ".txt", s & vbCrLf)
+            File.AppendAllText(ParentDir & "\DirURLs\urls" & (URLs.IndexOf(s) Mod threads) & ".txt", s & vbCrLf)
         Next
         For i = 0 To threads
-            If File.Exists(ParentDir & "\urls" & i & ".txt") Then
-                RunCommandH(args2(1), " -f """ & ParentDir & "\urls" & i & ".txt"" -k -o """ & args2(2) & """ -x -v --format mp4 --skip")
+            If File.Exists(ParentDir & "\DirURLs\urls" & i & ".txt") Then
+                RunCommandH(args2(1), " -f """ & ParentDir & "\DirURLs\urls" & i & ".txt"" -k -o """ & args2(2) & """ -x -v --format mp4 --skip")
             End If
         Next
 
@@ -106,11 +105,10 @@ Module Program
         Dim oProcess As New Process()
         Dim oStartInfo As New ProcessStartInfo(Command, Arguments)
         oStartInfo.WorkingDirectory = Command.Substring(0, Command.LastIndexOf("\"))
-        Console.WriteLine(oStartInfo.WorkingDirectory)
-        Console.ReadLine()
         oStartInfo.UseShellExecute = True
         oStartInfo.RedirectStandardOutput = False
         oProcess.StartInfo = oStartInfo
+
         Try
             oProcess.Start()
         Catch ex As Exception
