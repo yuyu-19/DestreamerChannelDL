@@ -1,6 +1,6 @@
 # DestreamerChannelDL
 
-Very simple script to bulk download videos from microsoft stream channel.
+Very simple program to bulk download videos from microsoft stream channel.
 
 Requirements:
 .NET core runtime, https://dotnet.microsoft.com/download
